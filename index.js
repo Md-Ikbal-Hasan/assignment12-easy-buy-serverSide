@@ -42,6 +42,35 @@ function verifyJWT(req, res, next) {
 async function run() {
 
     try {
+        // collections................
+        const usersCollection = client.db('easyBuy').collection('users');
+
+        // create user and save to the database............
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
+
+
+        // send jwt        
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' });
+                return res.send({ accessToken: token })
+            }
+            console.log(user);
+            res.status(403).send({ accessToken: '' })
+        })
+
+
+
+
+
+
 
     }
 
