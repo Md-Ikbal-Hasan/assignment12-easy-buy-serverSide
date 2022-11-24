@@ -48,8 +48,33 @@ async function run() {
         // create user and save to the database............
         app.post('/users', async (req, res) => {
             const user = req.body;
-            const result = await usersCollection.insertOne(user);
-            res.send(result);
+
+            const email = user.email;
+            const query = { email: email };
+            const registerdUser = await usersCollection.findOne(query);
+            console.log("reg", registerdUser);
+
+            if (!registerdUser) {
+                const result = await usersCollection.insertOne(user);
+                res.send(result);
+            }
+
+        })
+
+        // get seller .....................
+        app.get('/user/seller/:email', (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = usersCollection.findOne(query);
+            res.send({ isSeller: user?.role === 'seller' })
+        })
+
+        // get admin..............
+        app.get('/user/admin/:email', (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = usersCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin' })
         })
 
 
