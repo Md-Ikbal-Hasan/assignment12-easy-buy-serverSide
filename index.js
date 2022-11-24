@@ -44,6 +44,24 @@ async function run() {
     try {
         // collections................
         const usersCollection = client.db('easyBuy').collection('users');
+        const categoriesCollection = client.db('easyBuy').collection('categories');
+        const productsCollection = client.db('easyBuy').collection('products');
+
+
+        // send jwt        
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' });
+                return res.send({ accessToken: token })
+            }
+            console.log(user);
+            res.status(403).send({ accessToken: '' })
+        })
+
+
 
         // create user and save to the database............
         app.post('/users', async (req, res) => {
@@ -62,34 +80,38 @@ async function run() {
         })
 
         // get seller .....................
-        app.get('/user/seller/:email', (req, res) => {
+        app.get('/users/seller/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
-            const user = usersCollection.findOne(query);
+            const user = await usersCollection.findOne(query);
             res.send({ isSeller: user?.role === 'seller' })
         })
 
         // get admin..............
-        app.get('/user/admin/:email', (req, res) => {
+        app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
-            const user = usersCollection.findOne(query);
+            const user = await usersCollection.findOne(query);
             res.send({ isAdmin: user?.role === 'admin' })
         })
 
-
-        // send jwt        
-        app.get('/jwt', async (req, res) => {
-            const email = req.query.email;
-            const query = { email: email }
-            const user = await usersCollection.findOne(query);
-            if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' });
-                return res.send({ accessToken: token })
-            }
-            console.log(user);
-            res.status(403).send({ accessToken: '' })
+        // get category
+        app.get('/categories', async (req, res) => {
+            const query = {};
+            const result = await categoriesCollection.find(query).toArray();
+            res.send(result);
         })
+
+
+        // post products
+        app.post('/addproduct', async (req, res) => {
+            const product = req.body;
+            const result = await productsCollection.insertOne(product);
+            res.send(result);
+        })
+
+
+
 
 
 
