@@ -95,7 +95,7 @@ async function run() {
             res.send({ isAdmin: user?.role === 'admin' })
         })
 
-        // get category
+        // get category..............
         app.get('/categories', async (req, res) => {
             const query = {};
             const result = await categoriesCollection.find(query).toArray();
@@ -103,10 +103,19 @@ async function run() {
         })
 
 
-        // post products
+        // post products...................
         app.post('/addproduct', async (req, res) => {
             const product = req.body;
             const result = await productsCollection.insertOne(product);
+            res.send(result);
+        })
+
+
+        // get all the products of a specific user.............
+        app.get('/products/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { sellerEmail: email };
+            const result = await productsCollection.find(query).toArray();
             res.send(result);
         })
 
