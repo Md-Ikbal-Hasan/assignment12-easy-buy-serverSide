@@ -103,7 +103,7 @@ async function run() {
         })
 
 
-        // post products...................
+        // post/add a  products...................
         app.post('/addproduct', async (req, res) => {
             const product = req.body;
             const result = await productsCollection.insertOne(product);
@@ -116,6 +116,21 @@ async function run() {
             const email = req.params.email;
             const query = { sellerEmail: email };
             const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // advertise a product...............
+        app.put('/products/advertise/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    advertise: true
+                }
+            }
+
+            const result = await productsCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
 
