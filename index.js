@@ -48,6 +48,19 @@ async function run() {
         const productsCollection = client.db('easyBuy').collection('products');
 
 
+        // verify admin. make sure use verifyAdmin after verifyJWT
+        const verifyAdmin = async (req, res, next) => {
+            const decodedemail = req.decoded.email;
+            const query = { email: decodedemail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        }
+
+
         // send jwt        
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
@@ -102,6 +115,14 @@ async function run() {
             res.send(result);
         })
 
+        // get specific categories product
+        app.get('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { category: id };
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        })
+
 
         // post/add a  products...................
         app.post('/addproduct', async (req, res) => {
@@ -111,6 +132,8 @@ async function run() {
         })
 
 
+
+
         // get all the products of a specific user.............
         app.get('/products/:email', async (req, res) => {
             const email = req.params.email;
@@ -118,6 +141,15 @@ async function run() {
             const result = await productsCollection.find(query).toArray();
             res.send(result);
         })
+
+
+        // get all the unsold advertised product...............
+        app.get('/advertisedProduct', async (req, res) => {
+            const query = { advertise: true, paid: false };
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        })
+
 
         // advertise a product...............
         app.put('/products/advertise/:id', async (req, res) => {
@@ -133,6 +165,8 @@ async function run() {
             const result = await productsCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
+
+
 
 
 
@@ -159,6 +193,8 @@ run().catch(error => console.log(error));
 
 
 app.get('/', (req, res) => {
+    const postedDate = new Date();
+    console.log(postedDate);
     res.send("Api working......")
 })
 
