@@ -136,6 +136,21 @@ async function run() {
             res.send(result);
         })
 
+        // verify seller...........
+        app.put('/verifyseller/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    verified: true
+                }
+            }
+            const result = await usersCollection.updateMany(query, updatedDoc, options);
+            res.send(result);
+
+        })
+
         // get category..............
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -151,27 +166,6 @@ async function run() {
             res.send(result);
         })
 
-
-        // temporary api ###########################################
-        // app.put('/updateBookedInfo', async (req, res) => {
-
-        //     const query = {};
-        //     const options = { upsert: true };
-        //     const updatedDoc = {
-        //         $set: {
-        //             booked: false,
-        //             advertise: false
-        //         }
-        //     }
-
-        //     const result = await productsCollection.updateMany(query, updatedDoc, options)
-
-        //     res.send(result);
-
-        // })
-
-
-        //######################################################
 
 
         // post/add a  products...................
