@@ -83,7 +83,8 @@ async function run() {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' });
                 return res.send({ accessToken: token })
             }
-            console.log(user);
+            console.log("user in jwt api: ", user);
+            console.log("jwt called for token...............");
             res.status(403).send({ accessToken: '' })
         })
 
@@ -103,6 +104,14 @@ async function run() {
                 res.send(result);
             }
 
+        })
+
+        // delete a user from database............
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
         })
 
         // get seller. Find out someone is seller or not .....................
