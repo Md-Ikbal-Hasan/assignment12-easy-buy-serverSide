@@ -46,6 +46,7 @@ async function run() {
         const usersCollection = client.db('easyBuy').collection('users');
         const categoriesCollection = client.db('easyBuy').collection('categories');
         const productsCollection = client.db('easyBuy').collection('products');
+        const bookingProductsCollection = client.db('easyBuy').collection('bookingProducts');
 
 
         // verify admin. make sure use verifyAdmin after verifyJWT
@@ -104,7 +105,7 @@ async function run() {
 
         })
 
-        // get seller .....................
+        // get seller. Find out someone is seller or not .....................
         app.get('/users/seller/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
@@ -112,12 +113,27 @@ async function run() {
             res.send({ isSeller: user?.role === 'seller' })
         })
 
-        // get admin..............
+        // get admin. find out someone is admin or not ..............
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             res.send({ isAdmin: user?.role === 'admin' })
+        })
+
+        //get all sellers
+        app.get('/allseller', verifyJWT, verifyAdmin, async (req, res) => {
+            const query = { role: 'seller' };
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        })
+
+
+        //get all sellers
+        app.get('/allbuyer', verifyJWT, verifyAdmin, async (req, res) => {
+            const query = { role: 'buyer' };
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
         })
 
         // get category..............
@@ -127,13 +143,35 @@ async function run() {
             res.send(result);
         })
 
-        // get specific categories product
+        // get specific categories product............
         app.get('/categories/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { category: id };
+            const query = { category: id, paid: false, booked: false };
             const result = await productsCollection.find(query).toArray();
             res.send(result);
         })
+
+
+        // temporary api ###########################################
+        // app.put('/updateBookedInfo', async (req, res) => {
+
+        //     const query = {};
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: {
+        //             booked: false,
+        //             advertise: false
+        //         }
+        //     }
+
+        //     const result = await productsCollection.updateMany(query, updatedDoc, options)
+
+        //     res.send(result);
+
+        // })
+
+
+        //######################################################
 
 
         // post/add a  products...................
@@ -175,6 +213,40 @@ async function run() {
             }
 
             const result = await productsCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+
+        // booking products
+        app.post('/bookingProduct', verifyJWT, async (req, res) => {
+            const bookingInfo = req.body;
+            const id = bookingInfo.productId;
+
+            // added booking info  to the database
+            const result = await bookingProductsCollection.insertOne(bookingInfo);
+
+
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    booked: true
+                }
+            }
+
+            // updated the booked status to true at productsCollection
+            const updatedResult = await productsCollection.updateOne(filter, updatedDoc);
+            console.log(updatedResult);
+
+
+            res.send(result);
+        })
+
+
+        // get all the booking product of a specifi user/buyer.............
+        app.get('/bookingProduct/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { buyerEmail: email };
+            const result = await bookingProductsCollection.find(query).toArray();
             res.send(result);
         })
 
