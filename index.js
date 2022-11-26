@@ -186,6 +186,15 @@ async function run() {
         })
 
 
+        // delete a product
+        app.delete('/products/:id', verifyJWT, verifySeller, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await productsCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
 
 
         // get all the products of a specific user.............
@@ -255,15 +264,6 @@ async function run() {
         })
 
 
-        // get a single booking product by id........
-        // app.get('/bookingProduct/:id', async (req, res) => {
-        //     console.log("api called for single booking product");
-        //     const id = req.params.id;
-        //     const query = { _id: ObjectId(id) };
-        //     const result = await bookingProductsCollection.findOne(query);
-        //     console.log("result: ", result);
-        //     res.send(result);
-        // })
 
         app.get('/singleBookingProduct/:id', async (req, res) => {
             const id = req.params.id;
