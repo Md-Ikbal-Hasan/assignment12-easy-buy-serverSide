@@ -238,20 +238,37 @@ async function run() {
             // added booking info  to the database
             const result = await bookingProductsCollection.insertOne(bookingInfo);
 
-
+            // updated the booked status to true at productsCollection
             const filter = { _id: ObjectId(id) };
             const updatedDoc = {
                 $set: {
                     booked: true
                 }
             }
-
-            // updated the booked status to true at productsCollection
             const updatedResult = await productsCollection.updateOne(filter, updatedDoc);
 
+            res.send(result);
+        })
 
+
+        // ##########################################################################
+        // delete a bookingProduct which are not paid yet and set booked : false in product collection
+        app.delete('/bookingProduct/:id/:productId', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await bookingProductsCollection.deleteOne(query);
+
+            const productId = req.params.productId;
+            const filter = { _id: ObjectId(productId) }
+            const updatedDoc = {
+                $set: {
+                    booked: false
+                }
+            }
+            const updatedResult = await productsCollection.updateOne(filter, updatedDoc)
 
             res.send(result);
+
         })
 
 
