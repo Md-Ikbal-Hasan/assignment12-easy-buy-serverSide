@@ -47,6 +47,7 @@ async function run() {
         const categoriesCollection = client.db('easyBuy').collection('categories');
         const productsCollection = client.db('easyBuy').collection('products');
         const bookingProductsCollection = client.db('easyBuy').collection('bookingProducts');
+        const paymentsCollection = client.db('easyBuy').collection('payments');
 
 
         // verify admin. make sure use verifyAdmin after verifyJWT
@@ -198,7 +199,7 @@ async function run() {
 
         // get all the unsold advertised product...............
         app.get('/advertisedProduct', async (req, res) => {
-            const query = { advertise: true, paid: false };
+            const query = { advertise: true, paid: false, booked: false };
             const result = await productsCollection.find(query).toArray();
             res.send(result);
         })
@@ -238,7 +239,7 @@ async function run() {
 
             // updated the booked status to true at productsCollection
             const updatedResult = await productsCollection.updateOne(filter, updatedDoc);
-            console.log(updatedResult);
+
 
 
             res.send(result);
@@ -252,6 +253,80 @@ async function run() {
             const result = await bookingProductsCollection.find(query).toArray();
             res.send(result);
         })
+
+
+        // get a single booking product by id........
+        // app.get('/bookingProduct/:id', async (req, res) => {
+        //     console.log("api called for single booking product");
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) };
+        //     const result = await bookingProductsCollection.findOne(query);
+        //     console.log("result: ", result);
+        //     res.send(result);
+        // })
+
+        app.get('/singleBookingProduct/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await bookingProductsCollection.findOne(query);
+            res.send(result);
+        })
+
+        // payment intent..............
+        app.post('/create-payment-intent', async (req, res) => {
+            const booking = req.body;
+            const productPrice = booking.productPrice;
+            const amount = parseInt(productPrice) * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
+            })
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+
+        })
+
+        // store payment information..............
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+
+            // updated bookingProduct collection object which is paid
+            const bookingProductId = payment.bookingProductId;
+            const filterForBookingProduct = { _id: ObjectId(bookingProductId) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updatedResultOfBookingProduct = await bookingProductsCollection.updateOne(filterForBookingProduct, updatedDoc);
+
+
+            // updated product collection object which is paid
+            const productId = payment.productId;
+            const filterForProductsCollection = { _id: ObjectId(productId) };
+            const updatedDoc2 = {
+                $set: {
+                    paid: true,
+                }
+            }
+            const updatedResultOfProductCollection = await productsCollection.updateOne(filterForProductsCollection, updatedDoc2);
+
+
+
+
+            res.send(result);
+        })
+
+
+
 
 
 
