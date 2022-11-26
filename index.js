@@ -273,7 +273,7 @@ async function run() {
 
 
         // get all the booking product of a specifi user/buyer.............
-        app.get('/bookingProduct/:email', async (req, res) => {
+        app.get('/bookingProduct/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const query = { buyerEmail: email };
             const result = await bookingProductsCollection.find(query).toArray();
