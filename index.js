@@ -115,6 +115,16 @@ async function run() {
             res.send(result);
         })
 
+        // get a specific user(single user) by id from user collection
+        app.get('/users/:email', async (req, res) => {
+            const userEmail = req.params.email;
+            const query = { email: userEmail };
+            const result = await usersCollection.findOne(query);
+            res.send(result);
+        })
+
+
+
         // get seller. Find out someone is seller or not .....................
         app.get('/users/seller/:email', async (req, res) => {
             const email = req.params.email;
@@ -146,7 +156,7 @@ async function run() {
             res.send(result);
         })
 
-        // verify seller...........
+        // verify seller. akjon seller k verify korte parbe admin. ...........
         app.put('/verifyseller/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -156,7 +166,7 @@ async function run() {
                     verified: true
                 }
             }
-            const result = await usersCollection.updateMany(query, updatedDoc, options);
+            const result = await usersCollection.updateOne(query, updatedDoc, options);
             res.send(result);
 
         })
@@ -179,7 +189,7 @@ async function run() {
 
 
         // post/add a  products...................
-        app.post('/addproduct', async (req, res) => {
+        app.post('/addproduct', verifyJWT, verifySeller, async (req, res) => {
             const product = req.body;
             const result = await productsCollection.insertOne(product);
             res.send(result);
@@ -187,7 +197,7 @@ async function run() {
 
 
         // delete a product
-        app.delete('/products/:id', verifyJWT, verifySeller, async (req, res) => {
+        app.delete('/products/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await productsCollection.deleteOne(query);
@@ -198,7 +208,7 @@ async function run() {
 
 
         // get all the products of a specific user.............
-        app.get('/products/:email', async (req, res) => {
+        app.get('/products/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const query = { sellerEmail: email };
             const result = await productsCollection.find(query).toArray();
@@ -290,7 +300,7 @@ async function run() {
         })
 
         // payment intent..............
-        app.post('/create-payment-intent', async (req, res) => {
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const booking = req.body;
             const productPrice = booking.productPrice;
             const amount = parseInt(productPrice) * 100;
@@ -310,11 +320,11 @@ async function run() {
         })
 
         // store payment information..............
-        app.post('/payments', async (req, res) => {
+        app.post('/payments', verifyJWT, async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
 
-            // updated bookingProduct collection object which is paid
+            // updated bookingProduct-collection object which is paid
             const bookingProductId = payment.bookingProductId;
             const filterForBookingProduct = { _id: ObjectId(bookingProductId) };
             const updatedDoc = {
@@ -326,7 +336,7 @@ async function run() {
             const updatedResultOfBookingProduct = await bookingProductsCollection.updateOne(filterForBookingProduct, updatedDoc);
 
 
-            // updated product collection object which is paid
+            // updated productcollection object which is paid
             const productId = payment.productId;
             const filterForProductsCollection = { _id: ObjectId(productId) };
             const updatedDoc2 = {
